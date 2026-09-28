@@ -20,7 +20,9 @@ export const metadata = {
   title: "9Router - AI Infrastructure Management",
   description: "One endpoint for all your AI providers. Manage keys, monitor usage, and scale effortlessly.",
   icons: {
-    icon: "/favicon.svg",
+    // Next.js does not auto-prefix metadata asset paths with basePath, so add it
+    // explicitly — matches the constant exposed to the client in next.config.mjs.
+    icon: `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/favicon.svg`,
   },
 };
 

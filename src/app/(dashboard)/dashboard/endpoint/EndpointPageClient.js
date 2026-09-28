@@ -701,7 +701,7 @@ export default function APIPageClient({ machineId }) {
   // Hydration fix: Only access window on client side
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setBaseUrl(`${window.location.origin}/v1`);
+      setBaseUrl(`${window.location.origin}/9route/v1`);
     }
   }, []);
 

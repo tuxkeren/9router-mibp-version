@@ -8,11 +8,18 @@ const tracingRoot = process.env.NEXT_TRACING_ROOT_MODE === "workspace"
   ? join(projectRoot, "..")
   : projectRoot;
 const proxyClientMaxBodySize = process.env.NINEROUTER_PROXY_CLIENT_MAX_BODY_SIZE || "128mb";
+// Single source of truth for the subpath this app is served from. Exposed to the
+// client bundle as NEXT_PUBLIC_BASE_PATH because Next.js only auto-prefixes
+// <Link>/<Image> — hand-built asset strings (e.g. provider icons in
+// shared/utils/providerIcon.js) must add it themselves.
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "/9route";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   output: "standalone",
+  basePath: BASE_PATH,
+  allowedDevOrigins: ["192.168.15.110"],
   // `open` must stay external. It derives its own directory from `import.meta.url`, and
   // webpack replaces that with the absolute path of the BUILD machine as a string literal.
   // A release built on macOS therefore ships `file:///Users/.../open/index.js`, which
@@ -31,7 +38,9 @@ const nextConfig = {
   images: {
     unoptimized: true
   },
-  env: {},
+  env: {
+    NEXT_PUBLIC_BASE_PATH: BASE_PATH,
+  },
   experimental: {
     // #1529/#1572: LLM clients can send long context or base64 image payloads through /v1 rewrites.
     proxyClientMaxBodySize,
