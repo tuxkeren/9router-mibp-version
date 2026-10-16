@@ -66,12 +66,20 @@ export const ERROR_RULES = [
   { text: "quota exceeded",           backoff: true },
   { text: "capacity",                 backoff: true },
   { text: "overloaded",               backoff: true },
+  // GUARD — DO NOT REMOVE the model-unavailable / deprecated rules below. See AGENTS.md §8.
+  // A dead or retired model (e.g. oc/ling-3.0-flash-fin-free) answers a
+  // request-scoped 400 ("[400]: Upstream request failed: Model is unavailable.")
+  // which the untouched-4xx guard in checkFallbackError would otherwise hand
+  // straight back, aborting the whole combo before it reaches a healthy member.
+  { text: "model is unavailable",     cooldownMs: COOLDOWN.short },
+  { text: "has been deprecated",      cooldownMs: COOLDOWN.long },
 
   // --- Status-based rules (fallback when text doesn't match) ---
   { status: 401, cooldownMs: COOLDOWN.long },
   { status: 402, cooldownMs: COOLDOWN.long },
   { status: 403, cooldownMs: COOLDOWN.long },
   { status: 404, cooldownMs: COOLDOWN.long },
+  { status: 410, cooldownMs: COOLDOWN.long }, // GUARD — retired model; see AGENTS.md §8
   { status: 429, backoff: true },
 ];
 

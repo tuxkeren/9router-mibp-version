@@ -158,3 +158,30 @@ re-verify after.
 Docker build depends on `npm ci` against a committed, npm-10-compatible
 lockfile. The fork explicitly removed `package-lock.json` from `.gitignore`
 (commit `76b139b3`).
+
+---
+
+## 8. A dead/retired model must fail over, not abort the combo
+
+**DO NOT** remove the `"model is unavailable"` / `"has been deprecated"` text
+rules or the `{ status: 410 }` rule from `ERROR_RULES`
+(`open-sse/config/errorConfig.js`).
+**DO NOT** add `410` back to the untouched-4xx guard in
+`checkFallbackError` (`open-sse/services/accountFallback.js`) — it is
+intentionally excluded alongside 401/402/403/429.
+
+**WHY:** A combo (e.g. `asistenku`: 31 models, round-robin strategy) tries each
+member in turn and falls back on failure. A dead or retired member answers a
+**request-scoped 400** — `oc/ling-3.0-flash-fin-free` returns
+`"[400]: Upstream request failed: Model is unavailable."`, and
+`oc/mimo-v2.5-free` a **410** ("has been deprecated"). The untouched-4xx guard
+treats an unmatched 4xx as request-scoped and returns it with
+`shouldFallback:false`, so the **whole combo aborted** at the dead member and
+never reached the healthy `gemini/*` members. Every request — including Telegram
+via Hermes (`model: asistenku`) — got the 400. The text rules + the 410 status
+rule make the combo fall over to the next member instead.
+
+A 400 for a genuinely request-scoped failure (e.g. "maximum context length")
+still does **not** fall back — only the model-unavailable wording and 410 do.
+
+**Covered by:** `tests/unit/account-fallback-4xx.test.js`.

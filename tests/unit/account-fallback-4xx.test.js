@@ -35,4 +35,27 @@ describe("checkFallbackError — request-scoped vs account-scoped failures", () 
     expect(result.shouldFallback).toBe(true);
     expect(result.cooldownMs).toBeGreaterThan(0);
   });
+
+  // Regression: a dead/retired combo member (dead upstream alias) answers 400
+  // "Model is unavailable". The untouched-4xx rule above handed it straight back,
+  // aborting the whole combo before it could reach a healthy model.
+  it("falls back when the upstream reports the model unavailable", () => {
+    const result = checkFallbackError(400, JSON.stringify({
+      error: {
+        message: "[400]: Upstream request failed: Model is unavailable.",
+        type: "invalid_request_error",
+        code: "bad_request",
+      },
+    }));
+
+    expect(result.shouldFallback).toBe(true);
+  });
+
+  it("falls back for a retired model (410 Gone)", () => {
+    expect(checkFallbackError(410, "gone").shouldFallback).toBe(true);
+  });
+
+  it("falls back when the upstream reports the model has been deprecated", () => {
+    expect(checkFallbackError(410, "Model mimo-v2.5-free has been deprecated").shouldFallback).toBe(true);
+  });
 });
